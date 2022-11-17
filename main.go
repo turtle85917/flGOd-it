@@ -1,13 +1,13 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Game struct{}
@@ -33,19 +33,47 @@ var (
 )
 
 type Tile struct {
+	image *ebiten.Image
+	MinPt image.Point
+	x     int
+	y     int
 	color int
 }
 
+func (t *Tile) In(x, y int) bool {
+	return t.image.At(x-t.x, y-t.y).(color.RGBA).A > 0
+}
+
 func (g *Game) Update() error {
+	for y := 0; y < boardSize; y++ {
+		for x := 0; x < boardSize; x++ {
+			t := board[y][x]
+			if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+				cx, cy := ebiten.CursorPosition()
+
+				idx := y*boardSize + x
+				click := cx-t.x <= tileSize*idx && cy-t.y <= tileSize*idx
+
+				if click {
+
+				}
+			}
+		}
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	for y := 0; y < boardSize; y++ {
 		for x := 0; x < boardSize; x++ {
+			t := board[y][x]
 			fx := float64(x * tileSize)
 			fy := float64(y * tileSize)
-			ebitenutil.DrawRect(screen, fx, fy, tileSize, tileSize, colors[board[y][x].color])
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(fx, fy)
+
+			screen.DrawImage(t.image, op)
 		}
 	}
 }
@@ -57,7 +85,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func reset() {
 	for y := 0; y < boardSize; y++ {
 		for x := 0; x < boardSize; x++ {
-			board[y][x] = Tile{color: rand.Intn(7)}
+			clr := rand.Intn(7)
+			tile := ebiten.NewImage(tileSize, tileSize)
+			tile.Fill(colors[clr])
+			board[y][x] = Tile{image: tile, x: x, y: y, color: clr}
 		}
 	}
 }
